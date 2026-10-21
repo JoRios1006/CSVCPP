@@ -174,6 +174,11 @@ int main() {
 
     Tabla tabla = parse_csv(archivo);
     mostrar_tabla(tabla);
+    ArchivoMapeado archivo_movimientos = map_file_to_memory("movimientos.csv");
+    if (!archivo_movimientos.valido()) {
+        std::cerr << "No se pudo abrir el archivo\n";
+        return 1;
+    }
 
     // Ejemplo: leer la columna numérica.
     int col = indice_columna(tabla, "monto_presupuestado");
