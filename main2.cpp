@@ -13,14 +13,14 @@ struct Movimiento {
     std::string categoria;
     std::string descripcion;
     double      monto_real = 0.0;
-};
+} __attribute__((aligned(128)));
 
 // "Diccionario" categoría -> monto. std::map los mantiene ordenados por nombre.
 using Diccionario = std::map<std::string, double>;
 
 // INCISOS
 // ---------- Inciso 1 ----------
-Diccionario cargar_presupuesto(const std::string& nombre_archivo) {
+static Diccionario cargar_presupuesto(const std::string& nombre_archivo) {
     Diccionario presupuesto;
 
     // Por cada fila del CSV se ejecuta el bloque [&](...) { ... }
