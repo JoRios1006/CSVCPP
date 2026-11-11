@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdio>        // printf
 #include <iostream>
 #include <map>
@@ -37,7 +38,7 @@ Diccionario cargar_presupuesto(const std::string& nombre_archivo) {
 }
 
 // ---------- Inciso 2 ----------
-std::vector<Movimiento> cargar_movimientos(const std::string& nombre_archivo) {
+static auto cargar_movimientos(const std::string& nombre_archivo) -> std::vector<Movimiento> {
     std::vector<Movimiento> movimientos;
 
     recorrer_csv(nombre_archivo, {"fecha", "categoria", "descripcion", "monto_real"},
@@ -57,7 +58,7 @@ std::vector<Movimiento> cargar_movimientos(const std::string& nombre_archivo) {
 }
 
 // ---------- Inciso 3 ----------
-Diccionario calcular_totales_reales(const std::vector<Movimiento>& movimientos) {
+static auto calcular_totales_reales(const std::vector<Movimiento>& movimientos) -> Diccionario {
     Diccionario totales;
     for (const Movimiento& m : movimientos)
         totales[m.categoria] += m.monto_real;  // si no existe, arranca en 0.0
@@ -65,7 +66,7 @@ Diccionario calcular_totales_reales(const std::vector<Movimiento>& movimientos) 
 }
 
 // ---------- Inciso 4 ----------
-std::string generar_barra_progreso(double porcentaje) {
+static auto generar_barra_progreso(double porcentaje) -> std::string {
     static const char* barras[] = {
         "░░░░░░░░░░",
         "█░░░░░░░░░",
@@ -81,8 +82,8 @@ std::string generar_barra_progreso(double porcentaje) {
     };
 
     int indice = static_cast<int>(porcentaje / 10.0);  // 80.0 -> 8, 79.9 -> 7
-    if (indice < 0)  indice = 0;                       // negativo: barra vacía
-    if (indice > 10) indice = 10;                      // exceso: barra completa
+    indice = std::max(indice, 0);                       // negativo: barra vacía
+    indice = std::min(indice, 10);                      // exceso: barra completa
 
     char texto_pct[16]; // padding de 16 caracteres para poner al final el texto de alerta
     std::snprintf(texto_pct, sizeof(texto_pct), " %.1f%%", porcentaje);  // siempre el % real
@@ -91,7 +92,7 @@ std::string generar_barra_progreso(double porcentaje) {
 }
 
 // ---------- Inciso 5 ----------
-std::string evaluar_estado(double porcentaje) {
+static auto evaluar_estado(double porcentaje) -> std::string {
     if (porcentaje < 80.0)   return "OK";
     if (porcentaje <= 100.0) return "ALERTA";
     return "EXCEDIDO";
@@ -100,14 +101,14 @@ std::string evaluar_estado(double porcentaje) {
 // REPORTE
 // Cuenta caracteres visibles de un texto UTF-8 (█ y ░ ocupan 3 bytes cada uno,
 // por eso printf("%-19s") no alinea bien con ellos).
-size_t largo_visible(const std::string& texto) {
+static auto largo_visible(const std::string& texto) -> size_t {
     size_t n = 0;
     for (unsigned char c : texto)
         if ((c & 0xC0) != 0x80) ++n;  // saltar bytes de continuación
     return n;
 }
 
-void imprimir_linea_presupuesto(const std::string& categoria, double gastado,
+static void imprimir_linea_presupuesto(const std::string& categoria, double gastado,
                                 double presupuestado,
                                 const std::string& barra, const std::string& estado) {
     double diferencia = presupuestado - gastado;
@@ -120,7 +121,7 @@ void imprimir_linea_presupuesto(const std::string& categoria, double gastado,
                 barra.c_str(), relleno.c_str(), estado.c_str());
 }
 
-int main() {
+auto main() -> int {
     Diccionario presupuesto = cargar_presupuesto("presupuesto.csv");
     std::vector<Movimiento> movimientos = cargar_movimientos("movimientos.csv");
     Diccionario gastos = calcular_totales_reales(movimientos);
@@ -131,7 +132,8 @@ int main() {
     std::printf("-------------------------------------------------------------------"
                 "-------------------------------------\n");
 
-    double total_presup = 0.0, total_gasto = 0.0;
+    double total_presup = 0.0;
+    double total_gasto = 0.0;
 
     for (const auto& [categoria, presupuestado] : presupuesto) {
         double gastado = gastos.count(categoria) ? gastos[categoria] : 0.0;
